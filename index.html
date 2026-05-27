@@ -24,7 +24,7 @@
     overflow-x: hidden;
   }
 
-  /* Matrix rain canvas */
+
   #matrix-canvas {
     position: fixed;
     top: 0; left: 0;
@@ -34,7 +34,7 @@
     z-index: 0;
   }
 
-  /* Scanlines overlay */
+
   body::after {
     content: '';
     position: fixed;
@@ -73,7 +73,7 @@
   }
   @keyframes fadeIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
 
-  /* Title bar */
+
   .title-bar {
     background: rgba(0,255,65,0.06);
     border-bottom: 1px solid rgba(0,255,65,0.2);
@@ -95,7 +95,7 @@
     letter-spacing: 2px;
   }
 
-  /* Body */
+ 
   .body { padding: 32px 36px; }
 
   .cmd-line {
@@ -155,7 +155,7 @@
   .info-label { color: rgba(0,255,65,0.4); letter-spacing: 1px; margin-bottom: 2px; }
   .info-val { color: var(--green); font-size: 11px; }
 
-  /* Main message box */
+
   .msg-box {
     border: 1px solid rgba(0,255,65,0.25);
     border-radius: 8px;
@@ -211,7 +211,7 @@
     direction: ltr;
   }
 
-  /* Hash section */
+
   .hash-box {
     background: rgba(0,0,0,0.3);
     border: 1px solid rgba(0,255,65,0.1);
@@ -229,7 +229,7 @@
   }
   .hash-ok { color: var(--green); font-weight: bold; }
 
-  /* Share button */
+ 
   .share-section { text-align: center; margin-top: 8px; }
   .share-btn {
     display: inline-flex;
@@ -272,7 +272,7 @@
     letter-spacing: 1px;
   }
 
-  /* Blinking cursor */
+
   .cursor {
     display: inline-block;
     width: 7px; height: 13px;
@@ -384,10 +384,10 @@
         <div class="aw-title">⚠️ SECURITY ADVISORY — تنبيه أمني</div>
         <div class="aw-body">
           بما إنك فتحت هذا الرابط...<br>
-          خلينا نذكّرك: <span class="aw-hl">مو كل رابط تفتحه!</span><br><br>
+          خليني اذكرك: <span class="aw-hl">مو كل رابط تفتحه!</span><br><br>
           المهاجمون يستخدمون روابط مزيفة لسرقة بياناتك.<br>
           دايم تحقق من المصدر قبل ما تضغط — حتى لو جاء من شخص تعرفه.<br><br>
-          <span class="aw-safe">هذا الرابط اتوقع امن 🔐</span>
+          <span class="aw-safe">تنبيه: هذا الرابط اتوقع امن </span>
         </div>
       </div>
 
@@ -400,7 +400,7 @@
 </div>
 
 <script>
-/* Matrix rain */
+
 (function(){
   const c = document.getElementById('matrix-canvas');
   const ctx = c.getContext('2d');
@@ -426,25 +426,6 @@
   window.addEventListener('resize', ()=>{ drops = Array.from({length:cols()},()=>Math.random()*-100); });
 })();
 
-/* Copy link */
-function copyLink(){
-  const url = window.location.href;
-  const notice = document.getElementById('notice');
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(url).then(()=>{
-      notice.textContent = '✓ تم نسخ الرابط — Link copied!';
-      setTimeout(()=> notice.textContent = '', 3000);
-    });
-  } else {
-    const ta = document.createElement('textarea');
-    ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    notice.textContent = '✓ تم نسخ الرابط — Link copied!';
-    setTimeout(()=> notice.textContent = '', 3000);
-  }
-}
 </script>
 </body>
 </html>
