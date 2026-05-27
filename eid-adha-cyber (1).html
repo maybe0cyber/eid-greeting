@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عيد أضحى مبارك — Secure Eid Greeting</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff41;
+    --green-dim: rgba(0,255,65,0.6);
+    --green-faint: rgba(0,255,65,0.08);
+    --green-glow: 0 0 20px rgba(0,255,65,0.4);
+    --bg: #050a05;
+    --bg2: #0a0f0a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  /* Matrix rain canvas */
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.13;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scanlines overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,0.18) 3px,
+      rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .terminal-card {
+    width: 100%;
+    max-width: 680px;
+    background: var(--bg2);
+    border: 1px solid rgba(0,255,65,0.3);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,255,65,0.1), inset 0 0 40px rgba(0,255,65,0.03);
+    animation: fadeIn 1.2s ease forwards;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+
+  /* Title bar */
+  .title-bar {
+    background: rgba(0,255,65,0.06);
+    border-bottom: 1px solid rgba(0,255,65,0.2);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    direction: ltr;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+  .bar-title {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(0,255,65,0.5);
+    letter-spacing: 2px;
+  }
+
+  /* Body */
+  .body { padding: 32px 36px; }
+
+  .cmd-line {
+    font-size: 12px;
+    color: rgba(0,255,65,0.5);
+    margin-bottom: 4px;
+    direction: ltr;
+  }
+  .cmd-line span { color: var(--green); }
+
+  .progress-row {
+    direction: ltr;
+    margin: 10px 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: rgba(0,255,65,0.5);
+  }
+  .progress-track {
+    flex: 1;
+    height: 3px;
+    background: rgba(0,255,65,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    width: 0;
+    border-radius: 2px;
+    animation: load 2s ease 0.5s forwards;
+    box-shadow: 0 0 8px var(--green);
+  }
+  @keyframes load { to { width: 100%; } }
+
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(0,255,65,0.12);
+    margin: 20px 0;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+    direction: ltr;
+  }
+  .info-item {
+    background: rgba(0,255,65,0.04);
+    border: 1px solid rgba(0,255,65,0.12);
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+  .info-label { color: rgba(0,255,65,0.4); letter-spacing: 1px; margin-bottom: 2px; }
+  .info-val { color: var(--green); font-size: 11px; }
+
+  /* Main message box */
+  .msg-box {
+    border: 1px solid rgba(0,255,65,0.25);
+    border-radius: 8px;
+    padding: 32px 24px;
+    margin: 24px 0;
+    background: rgba(0,255,65,0.03);
+    position: relative;
+    text-align: center;
+  }
+  .msg-tag {
+    position: absolute;
+    top: -9px;
+    right: 20px;
+    background: var(--bg2);
+    padding: 0 10px;
+    font-size: 10px;
+    color: rgba(0,255,65,0.5);
+    letter-spacing: 2px;
+    direction: ltr;
+  }
+
+  .eid-title {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 900;
+    font-size: clamp(28px, 6vw, 44px);
+    color: var(--green);
+    text-shadow: 0 0 30px rgba(0,255,65,0.6), 0 0 60px rgba(0,255,65,0.2);
+    margin-bottom: 16px;
+    animation: glitch 5s infinite;
+    direction: rtl;
+  }
+  @keyframes glitch {
+    0%,88%,100% { text-shadow: 0 0 30px rgba(0,255,65,0.6); }
+    90% { text-shadow: -3px 0 #ff0040bb, 3px 0 #0040ffbb, 0 0 30px rgba(0,255,65,0.6); }
+    92% { text-shadow: 3px 0 #ff0040bb, -3px 0 #0040ffbb, 0 0 30px rgba(0,255,65,0.6); }
+    94% { text-shadow: 0 0 30px rgba(0,255,65,0.6); }
+  }
+
+  .eid-sub {
+    font-family: 'Tajawal', sans-serif;
+    font-size: clamp(14px, 3.5vw, 19px);
+    color: rgba(0,255,65,0.7);
+    line-height: 1.9;
+    direction: rtl;
+    margin-bottom: 10px;
+  }
+
+  .eid-enc {
+    font-size: 10px;
+    color: rgba(0,255,65,0.3);
+    letter-spacing: 1.5px;
+    margin-top: 14px;
+    direction: ltr;
+  }
+
+  /* Hash section */
+  .hash-box {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,255,65,0.1);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    direction: ltr;
+  }
+  .hash-label { font-size: 10px; color: rgba(0,255,65,0.4); letter-spacing: 2px; margin-bottom: 6px; }
+  .hash-val {
+    font-size: 11px;
+    color: rgba(0,255,65,0.55);
+    word-break: break-all;
+    line-height: 1.7;
+  }
+  .hash-ok { color: var(--green); font-weight: bold; }
+
+  /* Share button */
+  .share-section { text-align: center; margin-top: 8px; }
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: 1px solid rgba(0,255,65,0.5);
+    border-radius: 6px;
+    padding: 13px 32px;
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 1.5px;
+    transition: all 0.25s;
+    direction: ltr;
+  }
+  .share-btn:hover {
+    background: rgba(0,255,65,0.08);
+    box-shadow: 0 0 20px rgba(0,255,65,0.25);
+    border-color: var(--green);
+  }
+  .share-btn:active { transform: scale(0.97); }
+  .share-btn svg { width: 16px; height: 16px; }
+
+  .copy-notice {
+    margin-top: 10px;
+    font-size: 11px;
+    color: rgba(0,255,65,0.5);
+    min-height: 18px;
+    transition: opacity .3s;
+  }
+
+  .footer-line {
+    margin-top: 24px;
+    font-size: 10px;
+    color: rgba(0,255,65,0.25);
+    text-align: center;
+    direction: ltr;
+    letter-spacing: 1px;
+  }
+
+  /* Blinking cursor */
+  .cursor {
+    display: inline-block;
+    width: 7px; height: 13px;
+    background: var(--green);
+    margin-left: 4px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .awareness-box {
+    border: 1px solid rgba(255,180,0,0.35);
+    border-radius: 8px;
+    padding: 20px 22px;
+    background: rgba(255,180,0,0.04);
+    margin-top: 8px;
+    direction: rtl;
+  }
+  .aw-title {
+    font-size: 12px;
+    color: #ffb400;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    direction: ltr;
+  }
+  .aw-body {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 15px;
+    color: rgba(0,255,65,0.7);
+    line-height: 1.9;
+  }
+  .aw-hl { color: #ffb400; font-weight: 700; }
+  .aw-safe { font-size: 12px; color: rgba(0,255,65,0.4); }
+
+  @media (max-width: 500px) {
+    .body { padding: 22px 18px; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<div class="wrapper">
+  <div class="terminal-card">
+
+    <div class="title-bar">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+      <span class="bar-title">CyberGreet Terminal — EID_ADHA.sh</span>
+    </div>
+
+    <div class="body">
+
+      <div class="cmd-line"><span>root@eid-node:~$</span> ./send_greeting.sh --occasion=eid_adha --enc=AES256 --verified</div>
+
+      <div class="progress-row">
+        <span>ENCRYPTING</span>
+        <div class="progress-track"><div class="progress-fill"></div></div>
+        <span>100%</span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">STATUS</div>
+          <div class="info-val">● CONNECTED</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">PROTOCOL</div>
+          <div class="info-val">Eid-Handshake v1446H</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">ENCRYPTION</div>
+          <div class="info-val">AES-256-GCM</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">RECIPIENT</div>
+          <div class="info-val">القريبين والأحبة</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="msg-box">
+        <span class="msg-tag">// DECRYPTED_MESSAGE //</span>
+
+        <div class="eid-title">عيد أضحى مبارك 🐑</div>
+
+        <div class="eid-sub">
+          كل عام وأنتم بخير وصحة وسلامة<br>
+          تقبّل الله منا ومنكم صالح الأعمال<br>
+          <span style="color:rgba(0,255,65,0.5);font-size:14px">وعساكم من عواده 🤍</span>
+        </div>
+
+        <div class="eid-enc">[ MESSAGE INTEGRITY: VERIFIED ✓ ]</div>
+      </div>
+
+      <div class="hash-box">
+        <div class="hash-label">SHA-256 SIGNATURE</div>
+        <div class="hash-val">
+          eid_adha_1446h :: 3c2f9a8e1d47b60f2a913c5e<br>
+          8d2f4b7a99e1c3d5f2a8b4e7 :: <span class="hash-ok">✓ AUTHENTIC</span>
+        </div>
+      </div>
+
+      <div class="awareness-box">
+        <div class="aw-title">⚠️ SECURITY ADVISORY — تنبيه أمني</div>
+        <div class="aw-body">
+          بما إنك فتحت هذا الرابط...<br>
+          خلينا نذكّرك: <span class="aw-hl">مو كل رابط تفتحه!</span><br><br>
+          المهاجمون يستخدمون روابط مزيفة لسرقة بياناتك.<br>
+          دايم تحقق من المصدر قبل ما تضغط — حتى لو جاء من شخص تعرفه.<br><br>
+          <span class="aw-safe">هذا الرابط اتوقع امن 🔐</span>
+        </div>
+      </div>
+
+      <div class="footer-line">
+        <span class="cursor"></span> Session active — 1446H // Sec_Ops Terminal
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* Matrix rain */
+(function(){
+  const c = document.getElementById('matrix-canvas');
+  const ctx = c.getContext('2d');
+  function resize(){ c.width = window.innerWidth; c.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモ01アβλΣ∞Ψ∂Ωε'.split('');
+  const cols = () => Math.floor(c.width / 16);
+  let drops = Array.from({length: cols()}, () => Math.random() * -100);
+  function draw(){
+    ctx.fillStyle = 'rgba(5,10,5,0.05)';
+    ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = '13px Share Tech Mono, monospace';
+    drops.forEach((y,i)=>{
+      const ch = chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(ch, i*16, y*16);
+      if(y*16 > c.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i] += 0.5;
+    });
+  }
+  setInterval(draw, 60);
+  window.addEventListener('resize', ()=>{ drops = Array.from({length:cols()},()=>Math.random()*-100); });
+})();
+
+/* Copy link */
+function copyLink(){
+  const url = window.location.href;
+  const notice = document.getElementById('notice');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>{
+      notice.textContent = '✓ تم نسخ الرابط — Link copied!';
+      setTimeout(()=> notice.textContent = '', 3000);
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    notice.textContent = '✓ تم نسخ الرابط — Link copied!';
+    setTimeout(()=> notice.textContent = '', 3000);
+  }
+}
+</script>
+</body>
+</html>
